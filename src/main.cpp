@@ -11,6 +11,7 @@
 
 // for convenience
 using json = nlohmann::json;
+using namespace Eigen;
 
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
@@ -41,6 +42,14 @@ double polyeval(Eigen::VectorXd coeffs, double x) {
         result += coeffs[i] * pow(x, i);
     }
     return result;
+}
+
+VectorXd vecXd(vector<double> &vec) {
+    VectorXd vectorXd(vec.size());
+    for (int i = 0; i < vec.size(); i++) {
+        vectorXd[i] = vec[i];
+    }
+    return vectorXd;
 }
 
 // Fit a polynomial.
@@ -100,6 +109,23 @@ int main() {
                     * Both are in between [-1, 1].
                     *
                     */
+                    // first we fit a 3rd order polynomial
+                    VectorXd coeffs = polyfit(vecXd(ptsx), vecXd(ptsy), 3);
+                    cout << "Polynom: y = " << coeffs[0] << " + " << coeffs[1] << " * x + " << coeffs[2] << " * x^2"
+                         << endl;
+
+                    // now we build our state which consists of 6 values: x, y, psi, v and error values cte end epsi
+                    VectorXd state = VectorXd::Zero(6);
+                    state <<
+                          px,
+                            py,
+                            psi,
+                            v,
+                            0,
+                            0;
+                    // TODO: cte, epsi instead of zeroes
+
+//                    mpc.Solve(state, coeffs);
                     double steer_value;
                     double throttle_value;
 
