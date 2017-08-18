@@ -114,6 +114,10 @@ int main() {
                     cout << "Polynom: y = " << coeffs[0] << " + " << coeffs[1] << " * x + " << coeffs[2] << " * x^2"
                          << endl;
 
+                    double cte = polyeval(coeffs, px) - py;
+                    // psi minus derivative of 3rd degree polynomial
+                    double epsi = psi - atan(coeffs[1] + 2 * px * coeffs[2]);
+
                     // now we build our state which consists of 6 values: x, y, psi, v and error values cte end epsi
                     VectorXd state = VectorXd::Zero(6);
                     state <<
@@ -121,11 +125,10 @@ int main() {
                             py,
                             psi,
                             v,
-                            0,
-                            0;
-                    // TODO: cte, epsi instead of zeroes
+                            cte,
+                            epsi;
 
-//                    mpc.Solve(state, coeffs);
+                    mpc.Solve(state, coeffs);
                     double steer_value;
                     double throttle_value;
 
