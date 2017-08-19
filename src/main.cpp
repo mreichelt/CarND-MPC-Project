@@ -82,13 +82,13 @@ int main() {
     // MPC is initialized here!
     MPC mpc;
 
-    h.onMessage([&mpc](uWS::WebSocket <uWS::SERVER> ws, char *data, size_t length,
+    h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                        uWS::OpCode opCode) {
         // "42" at the start of the message means there's a websocket message event.
         // The 4 signifies a websocket message
         // The 2 signifies a websocket event
         string sdata = string(data).substr(0, length);
-        cout << sdata << endl;
+        //cout << sdata << endl;
         if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
             string s = hasData(sdata);
             if (s != "") {
@@ -111,12 +111,16 @@ int main() {
                     */
                     // first we fit a 3rd order polynomial
                     VectorXd coeffs = polyfit(vecXd(ptsx), vecXd(ptsy), 3);
-                    cout << "Polynom: y = " << coeffs[0] << " + " << coeffs[1] << " * x + " << coeffs[2] << " * x^2"
-                         << endl;
+                    cout << "Polynom: y = " << coeffs[0] << " + " << coeffs[1] << " * x + " << coeffs[2] << " * x^2 + "
+                         << coeffs[3] << " * x^3" << endl;
 
                     double cte = polyeval(coeffs, px) - py;
                     // psi minus derivative of 3rd degree polynomial
-                    double epsi = psi - atan(coeffs[1] + 2 * px * coeffs[2]);
+                    // TODO: add epsi!
+//                    double epsi = psi - atan(coeffs[1] + 2 * px * coeffs[2] + 3 * px * pow(coeffs[3], 2));
+                    double epsi = 0;
+                    cout << "CTE = " << cte << ", epsi = " << epsi << endl;
+
 
                     // now we build our state which consists of 6 values: x, y, psi, v and error values cte end epsi
                     VectorXd state = VectorXd::Zero(6);
@@ -139,8 +143,8 @@ int main() {
                             delta_vals = {},
                             a_vals = {};
 
-                    int n_predictions_visualization = 20;
-                    for (size_t i = 0; i < n_predictions_visualization; i++) {
+                    int n_predictions_visualization = 3;
+                    for (size_t i = 1; i < n_predictions_visualization; i++) {
                         auto vars = mpc.Solve(state, coeffs);
 
                         x_vals.push_back(vars[0]);
@@ -157,10 +161,11 @@ int main() {
                     }
 
                     double steer_value = delta_vals.front();
-                    double throttle_value = a_vals.front();
+                    // TODO: why negative?
+                    double throttle_value = -a_vals.front();
+//                    double steer_value = -0.004;
+//                    double throttle_value = 0.1;
 
-                    // TODO: debug
-                    throttle_value = 0.1;
 
                     json msgJson;
                     // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -181,8 +186,8 @@ int main() {
                     //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
                     // the points in the simulator are connected by a Yellow line
 
-//                    msgJson["next_x"] = next_x_vals;
-//                    msgJson["next_y"] = next_y_vals;
+                    msgJson["next_x"] = next_x_vals;
+                    msgJson["next_y"] = next_y_vals;
 
 
                     auto msg = "42[\"steer\"," + msgJson.dump() + "]";
@@ -221,11 +226,11 @@ int main() {
         }
     });
 
-    h.onConnection([&h](uWS::WebSocket <uWS::SERVER> ws, uWS::HttpRequest req) {
+    h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
         cout << "Connected!!!" << endl;
     });
 
-    h.onDisconnection([&h](uWS::WebSocket <uWS::SERVER> ws, int code,
+    h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code,
                            char *message, size_t length) {
         ws.close();
         cout << "Disconnected" << endl;
