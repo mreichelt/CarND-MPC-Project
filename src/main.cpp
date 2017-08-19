@@ -12,6 +12,7 @@
 // for convenience
 using json = nlohmann::json;
 using namespace Eigen;
+using namespace std;
 
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
@@ -36,7 +37,7 @@ string hasData(string s) {
 }
 
 // Evaluate a polynomial.
-double polyeval(Eigen::VectorXd coeffs, double x) {
+double polyeval(VectorXd coeffs, double x) {
     double result = 0.0;
     for (int i = 0; i < coeffs.size(); i++) {
         result += coeffs[i] * pow(x, i);
@@ -55,11 +56,10 @@ VectorXd vecXd(vector<double> &vec) {
 // Fit a polynomial.
 // Adapted from
 // https://github.com/JuliaMath/Polynomials.jl/blob/master/src/Polynomials.jl#L676-L716
-Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
-                        int order) {
+VectorXd polyfit(VectorXd xvals, VectorXd yvals, int order) {
     assert(xvals.size() == yvals.size());
     assert(order >= 1 && order <= xvals.size() - 1);
-    Eigen::MatrixXd A(xvals.size(), order + 1);
+    MatrixXd A(xvals.size(), order + 1);
 
     for (int i = 0; i < xvals.size(); i++) {
         A(i, 0) = 1.0;
@@ -82,7 +82,7 @@ int main() {
     // MPC is initialized here!
     MPC mpc;
 
-    h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+    h.onMessage([&mpc](uWS::WebSocket <uWS::SERVER> ws, char *data, size_t length,
                        uWS::OpCode opCode) {
         // "42" at the start of the message means there's a websocket message event.
         // The 4 signifies a websocket message
@@ -128,25 +128,51 @@ int main() {
                             cte,
                             epsi;
 
-                    mpc.Solve(state, coeffs);
-                    double steer_value;
-                    double throttle_value;
+                    // use MPC to solve
+                    vector<double>
+                            x_vals = {state[0]},
+                            y_vals = {state[1]},
+                            psi_vals = {state[2]},
+                            v_vals = {state[3]},
+                            cte_vals = {state[4]},
+                            epsi_vals = {state[5]},
+                            delta_vals = {},
+                            a_vals = {};
+
+                    int n_predictions_visualization = 20;
+                    for (size_t i = 0; i < n_predictions_visualization; i++) {
+                        auto vars = mpc.Solve(state, coeffs);
+
+                        x_vals.push_back(vars[0]);
+                        y_vals.push_back(vars[1]);
+                        psi_vals.push_back(vars[2]);
+                        v_vals.push_back(vars[3]);
+                        cte_vals.push_back(vars[4]);
+                        epsi_vals.push_back(vars[5]);
+                        delta_vals.push_back(vars[6]);
+                        a_vals.push_back(vars[7]);
+
+                        // re-use predictions from MPC as next state to predict the following one
+                        state << vars[0], vars[1], vars[2], vars[3], vars[4], vars[5];
+                    }
+
+                    double steer_value = delta_vals.front();
+                    double throttle_value = a_vals.front();
+
+                    // TODO: debug
+                    throttle_value = 0.1;
 
                     json msgJson;
                     // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
                     // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-                    msgJson["steering_angle"] = steer_value;
+                    msgJson["steering_angle"] = steer_value / deg2rad(25);
                     msgJson["throttle"] = throttle_value;
-
-                    //Display the MPC predicted trajectory
-                    vector<double> mpc_x_vals;
-                    vector<double> mpc_y_vals;
 
                     //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
                     // the points in the simulator are connected by a Green line
 
-                    msgJson["mpc_x"] = mpc_x_vals;
-                    msgJson["mpc_y"] = mpc_y_vals;
+                    msgJson["mpc_x"] = x_vals;
+                    msgJson["mpc_y"] = y_vals;
 
                     //Display the waypoints/reference line
                     vector<double> next_x_vals;
@@ -155,12 +181,12 @@ int main() {
                     //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
                     // the points in the simulator are connected by a Yellow line
 
-                    msgJson["next_x"] = next_x_vals;
-                    msgJson["next_y"] = next_y_vals;
+//                    msgJson["next_x"] = next_x_vals;
+//                    msgJson["next_y"] = next_y_vals;
 
 
                     auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-                    std::cout << msg << std::endl;
+                    cout << msg << endl;
                     // Latency
                     // The purpose is to mimic real driving conditions where
                     // the car does actuate the commands instantly.
@@ -175,7 +201,7 @@ int main() {
                 }
             } else {
                 // Manual driving
-                std::string msg = "42[\"manual\",{}]";
+                string msg = "42[\"manual\",{}]";
                 ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
             }
         }
@@ -186,7 +212,7 @@ int main() {
     // doesn't compile :-(
     h.onHttpRequest([](uWS::HttpResponse *res, uWS::HttpRequest req, char *data,
                        size_t, size_t) {
-        const std::string s = "<h1>Hello world!</h1>";
+        const string s = "<h1>Hello world!</h1>";
         if (req.getUrl().valueLength == 1) {
             res->end(s.data(), s.length());
         } else {
@@ -195,21 +221,21 @@ int main() {
         }
     });
 
-    h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
-        std::cout << "Connected!!!" << std::endl;
+    h.onConnection([&h](uWS::WebSocket <uWS::SERVER> ws, uWS::HttpRequest req) {
+        cout << "Connected!!!" << endl;
     });
 
-    h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code,
+    h.onDisconnection([&h](uWS::WebSocket <uWS::SERVER> ws, int code,
                            char *message, size_t length) {
         ws.close();
-        std::cout << "Disconnected" << std::endl;
+        cout << "Disconnected" << endl;
     });
 
     int port = 4567;
     if (h.listen(port)) {
-        std::cout << "Listening to port " << port << std::endl;
+        cout << "Listening to port " << port << endl;
     } else {
-        std::cerr << "Failed to listen to port" << std::endl;
+        cerr << "Failed to listen to port" << endl;
         return -1;
     }
     h.run();
