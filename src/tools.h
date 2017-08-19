@@ -27,7 +27,18 @@ double polyeval(VectorXd coeffs, double x) {
     return result;
 }
 
-VectorXd vecXd(vector<double> &vec) {
+VectorXd derivative(VectorXd coeffs) {
+    if (coeffs.size() == 0) {
+        return coeffs;
+    }
+    VectorXd derivative = VectorXd::Zero(coeffs.size() - 1);
+    for (int i = 1; i < coeffs.size(); i++) {
+        derivative[i - 1] = coeffs[i] * i;
+    }
+    return derivative;
+}
+
+VectorXd vecXd(vector<double> vec) {
     VectorXd vectorXd(vec.size());
     for (int i = 0; i < vec.size(); i++) {
         vectorXd[i] = vec[i];
