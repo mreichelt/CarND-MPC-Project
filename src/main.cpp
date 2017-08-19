@@ -50,12 +50,14 @@ int main() {
                 string event = j[0].get<string>();
                 if (event == "telemetry") {
                     // j[1] is the data JSON object
-                    vector<double> ptsx = j[1]["ptsx"];
-                    vector<double> ptsy = j[1]["ptsy"];
+                    AbsoluteWaypoints trackAbsolute = {j[1]["ptsx"], j[1]["ptsy"]};
                     double px = j[1]["x"];
                     double py = j[1]["y"];
                     double psi = j[1]["psi"];
                     double v = j[1]["speed"];
+
+                    // convert absolute waypoints to relative ones using the vehicle's location and orientation
+                    RelativeWaypoints trackWaypoints = transformToRelative(trackAbsolute, {px, py}, psi);
 
                     /*
                     * TODO: Calculate steering angle and throttle using MPC.
@@ -63,16 +65,14 @@ int main() {
                     * Both are in between [-1, 1].
                     *
                     */
+
                     // first we fit a 3rd order polynomial
-                    VectorXd coeffs = polyfit(vecXd(ptsx), vecXd(ptsy), 3);
+                    VectorXd coeffs = polyfit(vecXd(trackWaypoints.x), vecXd(trackWaypoints.y), 3);
                     cout << "Polynom: y = " << coeffs[0] << " + " << coeffs[1] << " * x + " << coeffs[2] << " * x^2 + "
                          << coeffs[3] << " * x^3" << endl;
 
-                    double cte = polyeval(coeffs, px) - py;
-                    // psi minus derivative of 3rd degree polynomial
-                    // TODO: add epsi!
-//                    double epsi = psi - atan(coeffs[1] + 2 * px * coeffs[2] + 3 * px * pow(coeffs[3], 2));
-                    double epsi = 0;
+                    double cte = polyeval(coeffs, 0);
+                    double epsi = -(atan(polyeval(derivative(coeffs), 0)));
                     cout << "CTE = " << cte << ", epsi = " << epsi << endl;
 
 
@@ -117,8 +117,9 @@ int main() {
                     double steer_value = delta_vals.front();
                     // TODO: why negative?
                     double throttle_value = -a_vals.front();
-//                    double steer_value = -0.004;
-//                    double throttle_value = 0.1;
+                    // TODO: debug values
+                    steer_value = -0.004;
+                    throttle_value = 0.1;
 
 
                     json msgJson;
@@ -136,6 +137,11 @@ int main() {
                     //Display the waypoints/reference line
                     vector<double> next_x_vals;
                     vector<double> next_y_vals;
+
+                    for (int x = 0; x < 50; x++) {
+                        next_x_vals.push_back((double) x);
+                        next_y_vals.push_back(polyeval(coeffs, x));
+                    }
 
                     //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
                     // the points in the simulator are connected by a Yellow line
@@ -155,7 +161,8 @@ int main() {
                     //
                     // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
                     // SUBMITTING.
-                    this_thread::sleep_for(chrono::milliseconds(100));
+                    // TODO: enable sleep again
+//                    this_thread::sleep_for(chrono::milliseconds(100));
                     ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
                 }
             } else {

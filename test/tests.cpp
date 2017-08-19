@@ -29,3 +29,19 @@ TEST_CASE("Derivative of 1st degree polynomial should be constant") {
 TEST_CASE("Derivative of 3rd degree polynomial should be 2nd degree polynomial") {
     REQUIRE(derivative(vecXd({1.0, 2.0, 3.0, 4.0})) == vecXd({2.0, 6.0, 12.0}));
 }
+
+TEST_CASE("Transform absolute to relative coordinates: origin should be (0,0)") {
+    AbsoluteWaypoints absolute = {{1.0},
+                                  {2.0}};
+    RelativeWaypoints expected = {{0.0},
+                                  {0.0}};
+
+    RelativeWaypoints actual = transformToRelative(absolute, {1.0, 2.0}, 0);
+    REQUIRE(actual.x == expected.x);
+    REQUIRE(actual.y == expected.y);
+
+    // different angle should not change anything - (x,y) must still be converted to (0,0)
+    actual = transformToRelative(absolute, {1.0, 2.0}, M_PI / 4);
+    REQUIRE(actual.x == expected.x);
+    REQUIRE(actual.y == expected.y);
+}
