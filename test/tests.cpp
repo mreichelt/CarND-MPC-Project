@@ -69,3 +69,22 @@ TEST_CASE("Transform: point (1, 3) should become (1, 1) with origin (2, 2) and a
     REQUIRE(actual.x.front() == Approx(1.0));
     REQUIRE(actual.y.front() == Approx(1.0));
 }
+
+TEST_CASE("MPC: running on a straight line with no error should continue on straight line") {
+    MPC mpc;
+    VectorXd state = VectorXd::Zero(6);
+    double
+            x = 0,
+            y = 0,
+            psi = 0,
+            v = 1,
+            cte = 0,
+            epsi = 0;
+    state << x, y, psi, v, cte, epsi;
+    auto coeffs = vecXd({0.0, 0.0});    // straight line
+
+    const MPCSolution &solution = mpc.Solve(state, coeffs);
+    REQUIRE(solution.cost == Approx(0.0));
+    REQUIRE(solution.steering_delta == Approx(0.0));
+    REQUIRE(solution.acceleration == Approx(0.0));
+}

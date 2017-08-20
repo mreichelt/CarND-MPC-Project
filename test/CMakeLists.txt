@@ -1,5 +1,5 @@
 project(TEST)
 
-add_executable(Test tests.cpp ../src/tools.cpp)
+add_executable(Test tests.cpp ../src/MPC.cpp ../src/tools.cpp)
 
-target_link_libraries(Test)
+target_link_libraries(Test ipopt z ssl uv uWS)

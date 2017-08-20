@@ -87,52 +87,19 @@ int main() {
                             epsi;
 
                     // use MPC to solve
-                    vector<double>
-                            x_vals = {state[0]},
-                            y_vals = {state[1]},
-                            psi_vals = {state[2]},
-                            v_vals = {state[3]},
-                            cte_vals = {state[4]},
-                            epsi_vals = {state[5]},
-                            delta_vals = {},
-                            a_vals = {};
-
-                    int n_predictions_visualization = 3;
-                    for (size_t i = 1; i < n_predictions_visualization; i++) {
-                        auto vars = mpc.Solve(state, coeffs);
-
-                        x_vals.push_back(vars[0]);
-                        y_vals.push_back(vars[1]);
-                        psi_vals.push_back(vars[2]);
-                        v_vals.push_back(vars[3]);
-                        cte_vals.push_back(vars[4]);
-                        epsi_vals.push_back(vars[5]);
-                        delta_vals.push_back(vars[6]);
-                        a_vals.push_back(vars[7]);
-
-                        // re-use predictions from MPC as next state to predict the following one
-                        state << vars[0], vars[1], vars[2], vars[3], vars[4], vars[5];
-                    }
-
-                    double steer_value = delta_vals.front();
-                    // TODO: why negative?
-                    double throttle_value = -a_vals.front();
-                    // TODO: debug values
-                    steer_value = -0.004;
-                    throttle_value = 0.1;
-
+                    const MPCSolution &solution = mpc.Solve(state, coeffs);
 
                     json msgJson;
                     // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
                     // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-                    msgJson["steering_angle"] = steer_value / deg2rad25;
-                    msgJson["throttle"] = throttle_value;
+                    msgJson["steering_angle"] = solution.steering_delta / deg2rad25;
+                    msgJson["throttle"] = solution.acceleration;
 
                     //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
                     // the points in the simulator are connected by a Green line
 
-                    msgJson["mpc_x"] = x_vals;
-                    msgJson["mpc_y"] = y_vals;
+                    msgJson["mpc_x"] = solution.waypoints.x;
+                    msgJson["mpc_y"] = solution.waypoints.y;
 
                     // display the reference line (yellow)
                     msgJson["next_x"] = trackWaypoints.x;
