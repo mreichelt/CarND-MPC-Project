@@ -45,3 +45,19 @@ TEST_CASE("Transform absolute to relative coordinates: origin should be (0,0)") 
     REQUIRE(actual.x == expected.x);
     REQUIRE(actual.y == expected.y);
 }
+
+TEST_CASE("Transform: point (1,1) should become (sqrt(2),0) with origin and angle pi/4") {
+    AbsoluteWaypoints absolute = {{1.0},
+                                  {1.0}};
+    RelativeWaypoints actual = transformToRelative(absolute, {0.0, 0.0}, M_PI_4);
+    REQUIRE(actual.x.front() == Approx(M_SQRT2));
+    REQUIRE(actual.y.front() == Approx(0.0));
+}
+
+TEST_CASE("Transform: point (1,1) should become (-sqrt(2),0) with origin and angle 5 * pi/4") {
+    AbsoluteWaypoints absolute = {{1.0},
+                                  {1.0}};
+    RelativeWaypoints actual = transformToRelative(absolute, {0.0, 0.0}, 5 * M_PI_4);
+    REQUIRE(actual.x.front() == Approx(-M_SQRT2));
+    REQUIRE(actual.y.front() == Approx(0.0));
+}
