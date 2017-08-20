@@ -88,7 +88,10 @@ int main() {
                     json msgJson;
                     // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
                     // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-                    msgJson["steering_angle"] = solution.steering_delta / deg2rad25;
+                    // NOTE: While our MPC model is using the accurate vehicle model where positive angle means to steer
+                    // to the left, in the Udacity CarND simulator a positive angle means to steer to the right.
+                    // So we just flip the angle here!
+                    msgJson["steering_angle"] = -solution.steering_delta / deg2rad25;
                     msgJson["throttle"] = solution.acceleration;
 
                     //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
