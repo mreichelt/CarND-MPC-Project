@@ -23,6 +23,13 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
-add_subdirectory(src)
+# build mpc executable in this directory
+project(MPC)
+set(sources src/MPC.cpp src/main.cpp src/tools.cpp)
+add_executable(mpc ${sources})
+target_link_libraries(mpc ipopt z ssl uv uWS)
+
+
+# build tests into separate directory
 enable_testing()
 add_subdirectory(test)
