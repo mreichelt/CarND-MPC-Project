@@ -107,8 +107,8 @@ public:
                     delta0 = vars[delta_start + t - 1],
                     a0 = vars[a_start + t - 1],
 
-                    f_x0 = coeffs[0] + coeffs[1] * x0,
-                    psi_des0 = CppAD::atan(coeffs[1]);
+                    f_x0 = polyeval(coeffs, x0),
+                    psi_des0 = CppAD::atan(polyeval(derivative(coeffs), x0));
 
             // model constraints
             fg[1 + x_start + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
