@@ -134,24 +134,13 @@ int main() {
                     msgJson["mpc_x"] = x_vals;
                     msgJson["mpc_y"] = y_vals;
 
-                    //Display the waypoints/reference line
-                    vector<double> next_x_vals;
-                    vector<double> next_y_vals;
-
-                    for (int x = 0; x < 50; x++) {
-                        next_x_vals.push_back((double) x);
-                        next_y_vals.push_back(polyeval(coeffs, x));
-                    }
-
-                    //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
-                    // the points in the simulator are connected by a Yellow line
-
-                    msgJson["next_x"] = next_x_vals;
-                    msgJson["next_y"] = next_y_vals;
+                    // display the reference line (yellow)
+                    msgJson["next_x"] = trackWaypoints.x;
+                    msgJson["next_y"] = trackWaypoints.y;
 
 
                     auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-                    cout << msg << endl;
+//                    cout << msg << endl;
                     // Latency
                     // The purpose is to mimic real driving conditions where
                     // the car does actuate the commands instantly.
