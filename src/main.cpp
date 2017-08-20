@@ -77,14 +77,10 @@ int main() {
 
 
                     // now we build our state which consists of 6 values: x, y, psi, v and error values cte end epsi
+                    // remember that values x, y and psi are now zero because we translated the coordinates to the
+                    //  car's position and orientation!
                     VectorXd state = VectorXd::Zero(6);
-                    state <<
-                          px,
-                            py,
-                            psi,
-                            v,
-                            cte,
-                            epsi;
+                    state << 0, 0, 0, v, cte, epsi;
 
                     // use MPC to solve
                     const MPCSolution &solution = mpc.Solve(state, coeffs);
