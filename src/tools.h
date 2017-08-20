@@ -5,6 +5,7 @@
 #include <vector>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
+#include <cppad/cppad.hpp>
 
 using namespace Eigen;
 using namespace std;
@@ -29,6 +30,8 @@ double rad2deg(double x);
 const double deg2rad25 = deg2rad(25);
 
 double polyeval(VectorXd coeffs, double x);
+
+CppAD::AD<double> polyeval(VectorXd coeffs, CppAD::AD<double> x);
 
 VectorXd derivative(VectorXd coeffs);
 

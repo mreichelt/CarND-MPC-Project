@@ -1,7 +1,10 @@
 #include "tools.h"
+#include <cppad/cppad.hpp>
+#include <cppad/ipopt/solve.hpp>
 
 using namespace Eigen;
 using namespace std;
+using CppAD::AD;
 
 double deg2rad(double x) { return x * M_PI / 180; }
 
@@ -12,6 +15,14 @@ double polyeval(VectorXd coeffs, double x) {
     double result = 0.0;
     for (int i = 0; i < coeffs.size(); i++) {
         result += coeffs[i] * pow(x, i);
+    }
+    return result;
+}
+
+AD<double> polyeval(VectorXd coeffs, AD<double> x) {
+    AD<double> result = 0.0;
+    for (int i = 0; i < coeffs.size(); i++) {
+        result += coeffs[i] * CppAD::pow(x, i);
     }
     return result;
 }

@@ -70,7 +70,7 @@ TEST_CASE("Transform: point (1, 3) should become (1, 1) with origin (2, 2) and a
     REQUIRE(actual.y.front() == Approx(1.0));
 }
 
-TEST_CASE("MPC: running on a straight line with no error should continue on straight line") {
+TEST_CASE("MPC: running on x axis with no error should continue on x axis") {
     MPC mpc;
     VectorXd state = VectorXd::Zero(6);
     double
@@ -98,4 +98,100 @@ TEST_CASE("MPC: running on a straight line with no error should continue on stra
         // car drives on x axis, therefore y stays 0
         REQUIRE(solution.waypoints.y[i] == Approx(0.0));
     }
+}
+
+TEST_CASE("MPC: driving on x axis slower than reference speed should accelerate") {
+    MPC mpc;
+    VectorXd state = VectorXd::Zero(6);
+    double
+            x = 0,
+            y = 0,
+            psi = 0,
+            v = ref_speed * 0.9,
+            cte = 0,
+            epsi = 0;
+    state << x, y, psi, v, cte, epsi;
+    auto coeffs = vecXd({0.0, 0.0});    // straight line
+
+    const MPCSolution &solution = mpc.Solve(state, coeffs);
+    REQUIRE(solution.cost > 0.0);
+    REQUIRE(solution.steering_delta == Approx(0.0));
+    REQUIRE(solution.acceleration > 0.0);
+
+    REQUIRE(solution.waypoints.x.size() == N);
+    REQUIRE(solution.waypoints.y.size() == N);
+
+    for (int i = 0; i < N; i++) {
+        // just check that we continue driving on x axis
+        if (i > 0) {
+            REQUIRE(solution.waypoints.x[i] > 0.0);
+        }
+        REQUIRE(solution.waypoints.y[i] == Approx(0.0));
+    }
+}
+
+TEST_CASE("MPC: driving on x axis faster than reference speed should decelerate") {
+    MPC mpc;
+    VectorXd state = VectorXd::Zero(6);
+    double
+            x = 0,
+            y = 0,
+            psi = 0,
+            v = ref_speed * 1.1,
+            cte = 0,
+            epsi = 0;
+    state << x, y, psi, v, cte, epsi;
+    auto coeffs = vecXd({0.0, 0.0});    // straight line
+
+    const MPCSolution &solution = mpc.Solve(state, coeffs);
+    REQUIRE(solution.cost > 0.0);
+    REQUIRE(solution.steering_delta == Approx(0.0));
+    REQUIRE(solution.acceleration < 0.0);
+
+    REQUIRE(solution.waypoints.x.size() == N);
+    REQUIRE(solution.waypoints.y.size() == N);
+
+    for (int i = 0; i < N; i++) {
+        // just check that we continue driving on x axis
+        if (i > 0) {
+            REQUIRE(solution.waypoints.x[i] > 0.0);
+        }
+        REQUIRE(solution.waypoints.y[i] == Approx(0.0));
+    }
+}
+
+TEST_CASE("MPC: driving to the right of desired lane should steer left") {
+    MPC mpc;
+    auto coeffs = vecXd({1.0, 0.0});    // straight line at y == 1.0
+    VectorXd state = VectorXd::Zero(6);
+    double
+            x = 0,
+            y = 0,
+            psi = 0,
+            v = ref_speed,
+            cte = polyeval(coeffs, x),
+            epsi = 0;
+    state << x, y, psi, v, cte, epsi;
+
+    const MPCSolution &solution = mpc.Solve(state, coeffs);
+    REQUIRE(solution.cost > 0.0);
+    REQUIRE(solution.steering_delta < 0.0);
+}
+
+TEST_CASE("MPC: driving to the left of the x axis should steer right") {
+    MPC mpc;
+    auto coeffs = vecXd({-1.0, 0.0});    // straight line at y == -1.0
+    VectorXd state = VectorXd::Zero(6);
+    double
+            x = 0,
+            y = 0,
+            psi = 0,
+            v = ref_speed,
+            cte = polyeval(coeffs, x),
+            epsi = 0;
+    state << x, y, psi, v, cte, epsi;
+
+    const MPCSolution &solution = mpc.Solve(state, coeffs);
+    REQUIRE(solution.cost > 0.0);
+    REQUIRE(solution.steering_delta > 0.0);
 }
