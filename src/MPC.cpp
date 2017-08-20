@@ -52,22 +52,30 @@ public:
         // the Solver function below.
 
         // The part of the cost based on the reference state.
+        const double
+                importance_errors = 3000,
+                importance_speed = 1,
+                importance_use_steering = 10,
+                importance_use_throttling = 10,
+                importance_smalldiff_steering = 100,
+                importance_smalldiff_throttle = 1;
+
         for (int t = 0; t < N; t++) {
-            fg[0] += CppAD::pow(vars[cte_start + t], 2);
-            fg[0] += CppAD::pow(vars[epsi_start + t], 2);
-            fg[0] += CppAD::pow(vars[v_start + t] - ref_speed, 2);
+            fg[0] += importance_errors * CppAD::pow(vars[cte_start + t], 2);
+            fg[0] += importance_errors * CppAD::pow(vars[epsi_start + t], 2);
+            fg[0] += importance_speed * CppAD::pow(vars[v_start + t] - ref_speed, 2);
         }
 
         // Minimize the use of actuators.
         for (int t = 0; t < N - 1; t++) {
-            fg[0] += CppAD::pow(vars[delta_start + t], 2);
-            fg[0] += CppAD::pow(vars[a_start + t], 2);
+            fg[0] += importance_use_steering * CppAD::pow(vars[delta_start + t], 2);
+            fg[0] += importance_use_throttling * CppAD::pow(vars[a_start + t], 2);
         }
 
         // Minimize the value gap between sequential actuations.
         for (int t = 0; t < N - 2; t++) {
-            fg[0] += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
-            fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+            fg[0] += importance_smalldiff_steering * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+            fg[0] += importance_smalldiff_throttle * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
         }
 
         // Setup Constraints

@@ -16,7 +16,7 @@ struct MPCSolution {
 
 // TODO: variate these parameters
 const size_t N = 10;
-const double dt = 0.05;
+const double dt = 0.1;
 // the reference speed of the car in miles/hour
 const double ref_speed = 90;
 
