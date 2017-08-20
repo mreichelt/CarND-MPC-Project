@@ -49,13 +49,13 @@ public:
     void operator()(ADvector &fg, const ADvector &vars) {
         // The part of the cost based on the reference state.
         const double
-                importance_cte_error = 1,
-                importance_epsi_error = 1,
+                importance_cte_error = 3000,
+                importance_epsi_error = 3000,
                 importance_speed = 1,
                 importance_dont_steer = 1,
                 importance_dont_use_throttle = 1,
-                importance_smalldiff_steering = 1,
-                importance_smalldiff_throttle = 1;
+                importance_smalldiff_steering = 500,
+                importance_smalldiff_throttle = 10;
 
         for (int t = 0; t < N; t++) {
             fg[0] += importance_cte_error * CppAD::pow(vars[cte_start + t], 2);
@@ -143,11 +143,6 @@ MPCSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     double cte = state[4];
     double epsi = state[5];
 
-    // TODO: Set the number of model variables (includes both states and inputs).
-    // For example: If the state is a 4 element vector, the actuators is a 2
-    // element vector and there are 10 timesteps. The number of variables is:
-    //
-    // 4 * 10 + 2 * 9
     size_t n_vars = N * 6 + (N - 1) * 2;
     size_t n_constraints = N * 6;
 
@@ -209,7 +204,7 @@ MPCSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
 
     // object that computes objective and constraints
-    FG_eval fg_eval(coeffs);
+    FG_eval fg_eval(std::move(coeffs));
 
     //
     // NOTE: You don't have to worry about these options
@@ -245,19 +240,15 @@ MPCSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
     // Cost
     auto cost = solution.obj_value;
-    std::cout << "Cost " << cost << std::endl;
+//    std::cout << "Cost " << cost << std::endl;
 
-    // TODO: Return the first actuator values. The variables can be accessed with
-    // `solution.x[i]`.
-    //
-    // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
-    // creates a 2 element double vector.
 
-    vector<double> predicted_x, predicted_y;
+    vector<double> predicted_x(N);
+    vector<double> predicted_y(N);
 
     for (int i = 0; i < N; i++) {
-        predicted_x.push_back(solution.x[x_start + i]);
-        predicted_y.push_back(solution.x[y_start + i]);
+        predicted_x[i] = solution.x[x_start + i];
+        predicted_y[i] = solution.x[y_start + i];
     }
 
     MPCSolution mpcSolution = {
