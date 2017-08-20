@@ -175,7 +175,7 @@ TEST_CASE("MPC: driving to the right of desired lane should steer left") {
 
     const MPCSolution &solution = mpc.Solve(state, coeffs);
     REQUIRE(solution.cost > 0.0);
-    REQUIRE(solution.steering_delta < 0.0);
+    REQUIRE(solution.steering_delta > 0.0);
 }
 
 TEST_CASE("MPC: driving to the left of the x axis should steer right") {
@@ -193,5 +193,5 @@ TEST_CASE("MPC: driving to the left of the x axis should steer right") {
 
     const MPCSolution &solution = mpc.Solve(state, coeffs);
     REQUIRE(solution.cost > 0.0);
-    REQUIRE(solution.steering_delta > 0.0);
+    REQUIRE(solution.steering_delta < 0.0);
 }
