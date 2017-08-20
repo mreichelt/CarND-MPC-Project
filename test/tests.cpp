@@ -31,33 +31,41 @@ TEST_CASE("Derivative of 3rd degree polynomial should be 2nd degree polynomial")
 }
 
 TEST_CASE("Transform absolute to relative coordinates: origin should be (0,0)") {
-    AbsoluteWaypoints absolute = {{1.0},
-                                  {2.0}};
+    AbsoluteWaypoints points = {{1.0},
+                                {2.0}};
     RelativeWaypoints expected = {{0.0},
                                   {0.0}};
 
-    RelativeWaypoints actual = transformToRelative(absolute, {1.0, 2.0}, 0);
+    RelativeWaypoints actual = transformToRelative(points, {1.0, 2.0}, 0);
     REQUIRE(actual.x == expected.x);
     REQUIRE(actual.y == expected.y);
 
     // different angle should not change anything - (x,y) must still be converted to (0,0)
-    actual = transformToRelative(absolute, {1.0, 2.0}, M_PI / 4);
+    actual = transformToRelative(points, {1.0, 2.0}, M_PI / 4);
     REQUIRE(actual.x == expected.x);
     REQUIRE(actual.y == expected.y);
 }
 
-TEST_CASE("Transform: point (1,1) should become (sqrt(2),0) with origin and angle pi/4") {
-    AbsoluteWaypoints absolute = {{1.0},
-                                  {1.0}};
-    RelativeWaypoints actual = transformToRelative(absolute, {0.0, 0.0}, M_PI_4);
+TEST_CASE("Transform: point (1, 1) should become (sqrt(2), 0) with origin (0, 0) and angle pi/4") {
+    AbsoluteWaypoints points = {{1.0},
+                                {1.0}};
+    RelativeWaypoints actual = transformToRelative(points, {0.0, 0.0}, M_PI_4);
     REQUIRE(actual.x.front() == Approx(M_SQRT2));
     REQUIRE(actual.y.front() == Approx(0.0));
 }
 
-TEST_CASE("Transform: point (1,1) should become (-sqrt(2),0) with origin and angle 5 * pi/4") {
-    AbsoluteWaypoints absolute = {{1.0},
-                                  {1.0}};
-    RelativeWaypoints actual = transformToRelative(absolute, {0.0, 0.0}, 5 * M_PI_4);
+TEST_CASE("Transform: point (1, 1) should become (-sqrt(2), 0) with origin (0, 0) and angle 5 * pi/4") {
+    AbsoluteWaypoints points = {{1.0},
+                                {1.0}};
+    RelativeWaypoints actual = transformToRelative(points, {0.0, 0.0}, 5 * M_PI_4);
     REQUIRE(actual.x.front() == Approx(-M_SQRT2));
     REQUIRE(actual.y.front() == Approx(0.0));
+}
+
+TEST_CASE("Transform: point (1, 3) should become (1, 1) with origin (2, 2) and angle pi/2") {
+    AbsoluteWaypoints points = {{1.0},
+                                {3.0}};
+    RelativeWaypoints actual = transformToRelative(points, {2.0, 2.0}, M_PI_2);
+    REQUIRE(actual.x.front() == Approx(1.0));
+    REQUIRE(actual.y.front() == Approx(1.0));
 }
