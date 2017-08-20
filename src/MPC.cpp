@@ -17,6 +17,24 @@ size_t epsi_start = cte_start + N;
 size_t delta_start = epsi_start + N;
 size_t a_start = delta_start + N - 1;
 
+vector<string> ipopt_status_type{
+        "not_defined",
+        "success",
+        "maxiter_exceeded",
+        "stop_at_tiny_step",
+        "stop_at_acceptable_point",
+        "local_infeasibility",
+        "user_requested_stop",
+        "feasible_point_found",
+        "diverging_iterates",
+        "restoration_failure",
+        "error_in_step_computation",
+        "invalid_number_detected",
+        "too_few_degrees_of_freedom",
+        "internal_error",
+        "unknown"
+};
+
 
 class FG_eval {
 public:
@@ -111,7 +129,6 @@ MPC::MPC() {}
 MPC::~MPC() {}
 
 MPCSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
-    bool ok = true;
     typedef CPPAD_TESTVECTOR(double) Dvector;
 
     double x = state[0];
@@ -142,19 +159,18 @@ MPCSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
     // Set all non-actuators upper and lower limits to the max negative and positive values.
     for (size_t i = 0; i < delta_start; i++) {
-        vars_lowerbound[i] = numeric_limits<double>::min();
-        vars_upperbound[i] = numeric_limits<double>::max();
+        vars_lowerbound[i] = -1e19;
+        vars_upperbound[i] = 1e19;
     }
 
     // The upper and lower limits of delta are set to -25 and 25
     // degrees (values in radians).
     for (size_t i = delta_start; i < a_start; i++) {
-        // TODO: replace by deg2rad(25)
-        vars_lowerbound[i] = -0.436332;
-        vars_upperbound[i] = 0.436332;
+        vars_lowerbound[i] = -deg2rad25;
+        vars_upperbound[i] = deg2rad25;
     }
 
-    // Acceleration/decceleration upper and lower limits.
+    // Acceleration upper and lower limits.
     for (size_t i = a_start; i < n_vars; i++) {
         vars_lowerbound[i] = -1.0;
         vars_upperbound[i] = 1.0;
@@ -217,7 +233,10 @@ MPCSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
             constraints_upperbound, fg_eval, solution);
 
     // Check some of the solution values
-    ok &= solution.status == CppAD::ipopt::solve_result<Dvector>::success;
+    if (solution.status != CppAD::ipopt::solve_result<Dvector>::success) {
+        throw runtime_error("ipopt.solution.status == " +
+                            ipopt_status_type[solution.status - CppAD::ipopt::solve_result<Dvector>::not_defined]);
+    }
 
     // Cost
     auto cost = solution.obj_value;
@@ -230,6 +249,11 @@ MPCSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     // creates a 2 element double vector.
 
     vector<double> predicted_x, predicted_y;
+
+    for (int i = 0; i < N; i++) {
+        predicted_x.push_back(solution.x[x_start + i]);
+        predicted_y.push_back(solution.x[y_start + i]);
+    }
 
     MPCSolution mpcSolution = {
             solution.x[delta_start],

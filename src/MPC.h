@@ -17,8 +17,8 @@ struct MPCSolution {
 // TODO: variate these parameters
 const size_t N = 10;
 const double dt = 0.05;
-// the reference speed of the car
-const double ref_speed = 90;
+// the reference speed of the car in meters/second
+const double ref_speed = 40;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -34,6 +34,7 @@ const double Lf = 2.67;
 
 class MPC {
 public:
+
     MPC();
 
     virtual ~MPC();

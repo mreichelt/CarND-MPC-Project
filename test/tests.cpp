@@ -77,7 +77,7 @@ TEST_CASE("MPC: running on a straight line with no error should continue on stra
             x = 0,
             y = 0,
             psi = 0,
-            v = 1,
+            v = ref_speed,
             cte = 0,
             epsi = 0;
     state << x, y, psi, v, cte, epsi;
@@ -87,4 +87,15 @@ TEST_CASE("MPC: running on a straight line with no error should continue on stra
     REQUIRE(solution.cost == Approx(0.0));
     REQUIRE(solution.steering_delta == Approx(0.0));
     REQUIRE(solution.acceleration == Approx(0.0));
+
+    REQUIRE(solution.waypoints.x.size() == N);
+    REQUIRE(solution.waypoints.y.size() == N);
+
+    for (int i = 0; i < N; i++) {
+        // drive on the x axis beginning at (0, 0) -> just calculate driven distance
+        REQUIRE(solution.waypoints.x[i] == Approx(dt * ref_speed * i));
+
+        // car drives on x axis, therefore y stays 0
+        REQUIRE(solution.waypoints.y[i] == Approx(0.0));
+    }
 }
