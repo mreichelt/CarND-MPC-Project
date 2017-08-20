@@ -2,6 +2,7 @@
 #include "tools.h"
 #include <cppad/cppad.hpp>
 #include <cppad/ipopt/solve.hpp>
+#include <utility>
 #include "Eigen-3.3/Eigen/Core"
 
 using CppAD::AD;
@@ -41,35 +42,31 @@ public:
     // Fitted polynomial coefficients
     Eigen::VectorXd coeffs;
 
-    FG_eval(Eigen::VectorXd coeffs) { this->coeffs = coeffs; }
+    FG_eval(VectorXd coeffs) : coeffs(std::move(coeffs)) {}
 
     typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
 
     void operator()(ADvector &fg, const ADvector &vars) {
-        // TODO: implement MPC
-        // `fg` a vector of the cost constraints, `vars` is a vector of variable values (state & actuators)
-        // NOTE: You'll probably go back and forth between this function and
-        // the Solver function below.
-
         // The part of the cost based on the reference state.
         const double
-                importance_errors = 3000,
+                importance_cte_error = 1,
+                importance_epsi_error = 1,
                 importance_speed = 1,
-                importance_use_steering = 10,
-                importance_use_throttling = 10,
-                importance_smalldiff_steering = 100,
+                importance_dont_steer = 1,
+                importance_dont_use_throttle = 1,
+                importance_smalldiff_steering = 1,
                 importance_smalldiff_throttle = 1;
 
         for (int t = 0; t < N; t++) {
-            fg[0] += importance_errors * CppAD::pow(vars[cte_start + t], 2);
-            fg[0] += importance_errors * CppAD::pow(vars[epsi_start + t], 2);
+            fg[0] += importance_cte_error * CppAD::pow(vars[cte_start + t], 2);
+            fg[0] += importance_epsi_error * CppAD::pow(vars[epsi_start + t], 2);
             fg[0] += importance_speed * CppAD::pow(vars[v_start + t] - ref_speed, 2);
         }
 
         // Minimize the use of actuators.
         for (int t = 0; t < N - 1; t++) {
-            fg[0] += importance_use_steering * CppAD::pow(vars[delta_start + t], 2);
-            fg[0] += importance_use_throttling * CppAD::pow(vars[a_start + t], 2);
+            fg[0] += importance_dont_steer * CppAD::pow(vars[delta_start + t], 2);
+            fg[0] += importance_dont_use_throttle * CppAD::pow(vars[a_start + t], 2);
         }
 
         // Minimize the value gap between sequential actuations.
