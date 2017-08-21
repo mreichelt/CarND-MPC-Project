@@ -14,7 +14,7 @@ typedef CPPAD_TESTVECTOR(double) Dvector;
 const string ipopt_options = "Integer print_level  0\n"
         "Sparse  true        forward\n"
         "Sparse  true        reverse\n"
-        "Numeric max_cpu_time          0.5\n";
+        "Numeric max_cpu_time          0.25\n";
 
 size_t x_start = 0;
 size_t y_start = x_start + N;
@@ -56,13 +56,13 @@ public:
     void operator()(ADvector &fg, const ADvector &vars) {
         // The part of the cost based on the reference state.
         const double
-                weight_cte = 1000,
-                weight_epsi = 1000,
-                weight_speed = 0.1,
-                weight_minimize_steering = 1,
-                weight_minimize_throttle = 1,
-                weight_minimize_steering_gaps = 300,
-                weight_minimize_throttle_gaps = 10;
+                weight_cte = 1,
+                weight_epsi = 1,
+                weight_speed = 0.0001,
+                weight_minimize_steering = 0.001,
+                weight_minimize_throttle = 0.001,
+                weight_minimize_steering_gaps = 0.3,
+                weight_minimize_throttle_gaps = 0.1;
 
         fg[0] = 0.0;
 
