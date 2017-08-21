@@ -8,6 +8,13 @@
 using CppAD::AD;
 using namespace std;
 
+typedef CPPAD_TESTVECTOR(double) Dvector;
+
+// options for IPOPT solver
+const string ipopt_options = "Integer print_level  0\n"
+        "Sparse  true        forward\n"
+        "Sparse  true        reverse\n"
+        "Numeric max_cpu_time          0.5\n";
 
 size_t x_start = 0;
 size_t y_start = x_start + N;
@@ -18,7 +25,7 @@ size_t epsi_start = cte_start + N;
 size_t delta_start = epsi_start + N;
 size_t a_start = delta_start + N - 1;
 
-vector<string> ipopt_status_type{
+const vector<string> ipopt_status_type{
         "not_defined",
         "success",
         "maxiter_exceeded",
@@ -49,30 +56,32 @@ public:
     void operator()(ADvector &fg, const ADvector &vars) {
         // The part of the cost based on the reference state.
         const double
-                importance_cte_error = 3000,
-                importance_epsi_error = 3000,
-                importance_speed = 1,
-                importance_dont_steer = 1,
-                importance_dont_use_throttle = 1,
-                importance_smalldiff_steering = 500,
-                importance_smalldiff_throttle = 10;
+                weight_cte = 1000,
+                weight_epsi = 1000,
+                weight_speed = 0.1,
+                weight_minimize_steering = 1,
+                weight_minimize_throttle = 1,
+                weight_minimize_steering_gaps = 300,
+                weight_minimize_throttle_gaps = 10;
+
+        fg[0] = 0.0;
 
         for (int t = 0; t < N; t++) {
-            fg[0] += importance_cte_error * CppAD::pow(vars[cte_start + t], 2);
-            fg[0] += importance_epsi_error * CppAD::pow(vars[epsi_start + t], 2);
-            fg[0] += importance_speed * CppAD::pow(vars[v_start + t] - ref_speed, 2);
+            fg[0] += weight_cte * CppAD::pow(vars[cte_start + t], 2);
+            fg[0] += weight_epsi * CppAD::pow(vars[epsi_start + t], 2);
+            fg[0] += weight_speed * CppAD::pow(vars[v_start + t] - ref_speed, 2);
         }
 
         // Minimize the use of actuators.
         for (int t = 0; t < N - 1; t++) {
-            fg[0] += importance_dont_steer * CppAD::pow(vars[delta_start + t], 2);
-            fg[0] += importance_dont_use_throttle * CppAD::pow(vars[a_start + t], 2);
+            fg[0] += weight_minimize_steering * CppAD::pow(vars[delta_start + t], 2);
+            fg[0] += weight_minimize_throttle * CppAD::pow(vars[a_start + t], 2);
         }
 
         // Minimize the value gap between sequential actuations.
         for (int t = 0; t < N - 2; t++) {
-            fg[0] += importance_smalldiff_steering * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
-            fg[0] += importance_smalldiff_throttle * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+            fg[0] += weight_minimize_steering_gaps * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+            fg[0] += weight_minimize_throttle_gaps * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
         }
 
         // Setup Constraints
@@ -129,19 +138,18 @@ public:
 //
 // MPC class definition implementation.
 //
-MPC::MPC() {}
+MPC::MPC() = default;
 
-MPC::~MPC() {}
+MPC::~MPC() = default;
 
 MPCSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
-    typedef CPPAD_TESTVECTOR(double) Dvector;
-
-    double x = state[0];
-    double y = state[1];
-    double psi = state[2];
-    double v = state[3];
-    double cte = state[4];
-    double epsi = state[5];
+    double
+            x = state[0],
+            y = state[1],
+            psi = state[2],
+            v = state[3],
+            cte = state[4],
+            epsi = state[5];
 
     size_t n_vars = N * 6 + (N - 1) * 2;
     size_t n_constraints = N * 6;
@@ -206,30 +214,12 @@ MPCSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     // object that computes objective and constraints
     FG_eval fg_eval(std::move(coeffs));
 
-    //
-    // NOTE: You don't have to worry about these options
-    //
-    // options for IPOPT solver
-    string options;
-    // Uncomment this if you'd like more print information
-    options += "Integer print_level  0\n";
-    // NOTE: Setting sparse to true allows the solver to take advantage
-    // of sparse routines, this makes the computation MUCH FASTER. If you
-    // can uncomment 1 of these and see if it makes a difference or not but
-    // if you uncomment both the computation time should go up in orders of
-    // magnitude.
-    options += "Sparse  true        forward\n";
-    options += "Sparse  true        reverse\n";
-    // NOTE: Currently the solver has a maximum time limit of 0.5 seconds.
-    // Change this as you see fit.
-    options += "Numeric max_cpu_time          0.5\n";
-
     // place to return solution
     CppAD::ipopt::solve_result<Dvector> solution;
 
     // solve the problem
     CppAD::ipopt::solve<Dvector, FG_eval>(
-            options, vars, vars_lowerbound, vars_upperbound, constraints_lowerbound,
+            ipopt_options, vars, vars_lowerbound, vars_upperbound, constraints_lowerbound,
             constraints_upperbound, fg_eval, solution);
 
     // Check some of the solution values
