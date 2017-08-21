@@ -18,13 +18,14 @@ using namespace std;
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 // else the empty string "" will be returned.
-string hasData(string s) {
+string hasData(const string &s) {
     auto found_null = s.find("null");
-    auto b1 = s.find_first_of("[");
+    auto b1 = s.find_first_of('[');
     auto b2 = s.rfind("}]");
     if (found_null != string::npos) {
         return "";
-    } else if (b1 != string::npos && b2 != string::npos) {
+    }
+    if (b1 != string::npos && b2 != string::npos) {
         return s.substr(b1, b2 - b1 + 2);
     }
     return "";
@@ -60,7 +61,7 @@ int main() {
                             a = j[1]["throttle"];
 
                     // modify data: we know we have latency, so the expected position of the vehicle will change
-                    const double expectedLatency = 0.0;
+                    const double expectedLatency = 0.1;
                     px += v * cos(psi) * expectedLatency;
                     py += v * sin(psi) * expectedLatency;
                     psi += v / Lf * delta * expectedLatency;
@@ -118,7 +119,7 @@ int main() {
                     // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
                     // SUBMITTING.
                     // TODO: enable sleep again
-//                    this_thread::sleep_for(chrono::milliseconds(100));
+                    this_thread::sleep_for(chrono::milliseconds(100));
 
                     double latency = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - time)
                                              .count() / 1000.0;
