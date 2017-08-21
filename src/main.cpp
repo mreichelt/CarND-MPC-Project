@@ -35,11 +35,10 @@ int main() {
 
     // MPC is initialized here!
     MPC mpc;
-    vector<double> latencies;
-    latencies.reserve(10000);
 
-    h.onMessage([&mpc, &latencies](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
-                                   uWS::OpCode opCode) {
+    h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+                       uWS::OpCode opCode) {
+        auto time = chrono::steady_clock::now();
         // "42" at the start of the message means there's a websocket message event.
         // The 4 signifies a websocket message
         // The 2 signifies a websocket event
@@ -47,36 +46,41 @@ int main() {
         //cout << sdata << endl;
         if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
             string s = hasData(sdata);
-            if (s != "") {
+            if (!s.empty()) {
                 auto j = json::parse(s);
                 string event = j[0].get<string>();
                 if (event == "telemetry") {
                     // j[1] is the data JSON object
                     AbsoluteWaypoints trackAbsolute = {j[1]["ptsx"], j[1]["ptsy"]};
-                    double px = j[1]["x"];
-                    double py = j[1]["y"];
-                    double psi = j[1]["psi"];
-                    double v = j[1]["speed"];
-                    auto time = chrono::steady_clock::now();
+                    double px = j[1]["x"],
+                            py = j[1]["y"],
+                            psi = j[1]["psi"],
+                            v = j[1]["speed"],
+                            delta = j[1]["steering_angle"],
+                            a = j[1]["throttle"];
+
+                    // modify data: we know we have latency, so the expected position of the vehicle will change
+                    const double expectedLatency = 0.0;
+                    px += v * cos(psi) * expectedLatency;
+                    py += v * sin(psi) * expectedLatency;
+                    psi += v / Lf * delta * expectedLatency;
+                    v += a * expectedLatency;
 
                     // convert absolute waypoints to relative ones using the vehicle's location and orientation
                     RelativeWaypoints trackWaypoints = transformToRelative(trackAbsolute, {px, py}, psi);
 
-                    // first we fit a 3rd order polynomial
+                    // fit a 3rd order polynomial
                     VectorXd coeffs = polyfit(vecXd(trackWaypoints.x), vecXd(trackWaypoints.y), 3);
-//                    cout << "Polynom: y = " << coeffs[0] << " + " << coeffs[1] << " * x + " << coeffs[2] << " * x^2 + "
-//                         << coeffs[3] << " * x^3" << endl;
-
-                    double cte = polyeval(coeffs, 0);
-                    double epsi = -(atan(polyeval(derivative(coeffs), 0)));
-//                    cout << "CTE = " << cte << ", epsi = " << epsi << endl;
 
 
                     // now we build our state which consists of 6 values: x, y, psi, v and error values cte end epsi
                     // remember that values x, y and psi are now zero because we translated the coordinates to the
                     //  car's position and orientation!
+                    double cte = polyeval(coeffs, 0);
+                    double epsi = -(atan(polyeval(derivative(coeffs), 0)));
                     VectorXd state = VectorXd::Zero(6);
                     state << 0, 0, 0, v, cte, epsi;
+
 
                     // use MPC to solve
                     const MPCSolution &solution = mpc.Solve(state, coeffs);
@@ -93,6 +97,7 @@ int main() {
                     //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
                     // the points in the simulator are connected by a Green line
 
+                    // display MPC predictions line (green)
                     msgJson["mpc_x"] = solution.waypoints.x;
                     msgJson["mpc_y"] = solution.waypoints.y;
 
@@ -117,10 +122,8 @@ int main() {
 
                     double latency = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - time)
                                              .count() / 1000.0;
-                    double average = accumulate(latencies.begin(), latencies.end(), 0.0) / latencies.size();
-                    latencies.push_back(latency);
                     cout << "latency: " << fixed << setprecision(3) << latency
-                         << " seconds, average: " << average << endl;
+                         << " seconds, diff from expected latency: " << expectedLatency - latency << endl;
 
                     ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
                 }
