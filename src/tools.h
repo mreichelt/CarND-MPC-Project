@@ -41,4 +41,8 @@ VectorXd polyfit(VectorXd xvals, VectorXd yvals, int order);
 
 RelativeWaypoints transformToRelative(AbsoluteWaypoints absolute, Waypoint origin, double psi);
 
+double to_meters_per_second(double miles_per_hour);
+
+double to_miles_per_hour(double meters_per_second);
+
 #endif //MPC_TOOLS_H

@@ -60,8 +60,14 @@ int main() {
                             delta = j[1]["steering_angle"],
                             a = j[1]["throttle"];
 
+                    // NOTE: steering angle of simulator is flipped than our model implementation! So we have to flip
+                    //  the sign two times: Once when we begin using the angle, and once before we send it back.
+                    delta = -delta;
+                    // Simulator provides speed in miles/hour - but our model implementation uses meters/second
+                    v = to_meters_per_second(v);
+
                     // modify data: we know we have latency, so the expected position of the vehicle will change
-                    const double expectedLatency = 0.1;
+                    const double expectedLatency = 0.0;
                     px += v * cos(psi) * expectedLatency;
                     py += v * sin(psi) * expectedLatency;
                     psi += v / Lf * delta * expectedLatency;
@@ -89,9 +95,8 @@ int main() {
                     json msgJson;
                     // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
                     // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-                    // NOTE: While our MPC model is using the accurate vehicle model where positive angle means to steer
-                    // to the left, in the Udacity CarND simulator a positive angle means to steer to the right.
-                    // So we just flip the angle here!
+                    // NOTE: As described above, we need to flip the sign again here because the simulator uses
+                    //  the opposite angle than our model implementation.
                     msgJson["steering_angle"] = -solution.steering_delta / deg2rad25;
                     msgJson["throttle"] = solution.acceleration;
 
@@ -119,7 +124,7 @@ int main() {
                     // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
                     // SUBMITTING.
                     // TODO: enable sleep again
-                    this_thread::sleep_for(chrono::milliseconds(100));
+//                    this_thread::sleep_for(chrono::milliseconds(100));
 
                     double latency = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - time)
                                              .count() / 1000.0;

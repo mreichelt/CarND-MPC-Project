@@ -82,3 +82,11 @@ RelativeWaypoints transformToRelative(AbsoluteWaypoints absolute, Waypoint origi
     }
     return result;
 }
+
+double to_meters_per_second(double miles_per_hour) {
+    return miles_per_hour * 0.44704;
+}
+
+double to_miles_per_hour(double meters_per_second) {
+    return meters_per_second / 0.44704;
+}

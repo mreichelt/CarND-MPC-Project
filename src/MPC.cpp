@@ -58,10 +58,10 @@ public:
         const double
                 weight_cte = 1,
                 weight_epsi = 1,
-                weight_speed = 0.0001,
+                weight_speed = 0.001,
                 weight_minimize_steering = 0.001,
                 weight_minimize_throttle = 0.001,
-                weight_minimize_steering_gaps = 0.3,
+                weight_minimize_steering_gaps = 1000,
                 weight_minimize_throttle_gaps = 0.1;
 
         fg[0] = 0.0;
