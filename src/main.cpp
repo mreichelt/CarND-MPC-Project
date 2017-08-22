@@ -67,7 +67,7 @@ int main() {
                     v = to_meters_per_second(v);
 
                     // modify data: we know we have latency, so the expected position of the vehicle will change
-                    const double expectedLatency = 0.0;
+                    const double expectedLatency = 0.12;
                     px += v * cos(psi) * expectedLatency;
                     py += v * sin(psi) * expectedLatency;
                     psi += v / Lf * delta * expectedLatency;
@@ -123,8 +123,7 @@ int main() {
                     //
                     // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
                     // SUBMITTING.
-                    // TODO: enable sleep again
-//                    this_thread::sleep_for(chrono::milliseconds(100));
+                    this_thread::sleep_for(chrono::milliseconds(100));
 
                     double latency = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - time)
                                              .count() / 1000.0;
