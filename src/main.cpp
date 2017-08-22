@@ -100,16 +100,27 @@ int main() {
                     msgJson["steering_angle"] = -solution.steering_delta / deg2rad25;
                     msgJson["throttle"] = solution.acceleration;
 
-                    //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
-                    // the points in the simulator are connected by a Green line
+
 
                     // display MPC predictions line (green)
                     msgJson["mpc_x"] = solution.waypoints.x;
                     msgJson["mpc_y"] = solution.waypoints.y;
 
+
+
+                    // we'll generate some new waypoints with small distance to get a nice smooth yellow line
+                    //  we could just set next_x to trackWaypoints.x and next_y to trackWaypoints.y, but these points
+                    //
+                    const size_t num_waypoints = 100;
+                    Waypoints reference;
+                    for (int meters = 0; meters < num_waypoints; meters++) {
+                        reference.x.push_back((double) meters);
+                        reference.y.push_back(polyeval(coeffs, meters));
+                    }
+
                     // display the reference line (yellow)
-                    msgJson["next_x"] = trackWaypoints.x;
-                    msgJson["next_y"] = trackWaypoints.y;
+                    msgJson["next_x"] = reference.x;
+                    msgJson["next_y"] = reference.y;
 
 
                     auto msg = "42[\"steer\"," + msgJson.dump() + "]";
