@@ -3,13 +3,64 @@ Self-Driving Car Engineer Nanodegree Program
 
 ## Implementing Model Predictive Control (MPC)
 
+### Define MPC Equations
+
 By using an accurate model that describes the movements of vehicles we can implement a much better controller than a
 PID controller. We will use the following equations for the MPC controller (© Udacity):
 
 ![MPC equations (© Udacity)](images/mpc_equations.png)
 
+Here, the state of the vehicle is given by the position `(x,y)`, the current angle `psi` and the velocity `v`.
+The actuators are the acceleration/deceleration `a` and the steering angle `delta`.
 
+`cte` is the cross-track error and `epsi` is the difference of the reference angle to the current angle.
 
+Each update takes the time delta `dt` into account - the higher `dt`, the larger the changes between updates will be.
+
+### Choosing `N` and `dt`
+
+For the MPC we define a set of parameters `N` and `dt`. `N` is the number of points we want to calculate, and
+`dt` is the time difference between those. By calculating `N * dt`we can see how much time we can 'look into the future'.
+E.g. by defining `N=30` and `dt=0.05` we will predict 1.5 seconds into the future.
+
+In general, we want to choose smaller `N` and a higher `dt` so the prediction by IPOpt can be done in a reasonable amount
+of time, while still providing the accuracy we need to steer the vehicle.
+
+At first, I chose `N=30, dt=0.05`, which lead to longer time for calculation. Then I switched to `N=10, dt=0.1`, which
+seemed to be a good trade-off and also matched the latency of 0.1 seconds which would be introduced later.
+
+### Transforming the reference track and fitting a polynomial
+
+The simulator gives us points of the reference track in absolute coordinates. I transformed these to be relative
+to the location of the vehicle, which you can see [here](src/main.cpp#L77).
+
+Then I fitted a 3rd order polynomial to these points, which you can see [here](src/main.cpp#L80).
+
+### Choosing weights for the MPC cost function
+
+In MPC.cpp I [defined a cost function](src/MPC.cpp#L58-L85) and added weights to the different part of the cost functions
+using these rules:
+
+- In general a high cross-track error or angle error should lead to a large cost.
+- The speed is not as important as staying on the track, so it should be small.
+- In general we want to steer and throttle as less as possible.
+- The changes between steering angles of all timesteps should be as small as possible.
+- The changes between throttling of all timesteps should be small, but not as important as steering angle.
+
+### Run it!
+
+After fixing some problems, mainly due to my model using different equations than the simulator, the car was
+able to run around the track at a pretty high speed, as you can see in the video:
+
+![MPC without latency](mpc_01_nolatency.mp4)
+
+### Dealing with latency
+
+**TODO**
+
+### Learnings
+
+**TODO**
 
 
 
