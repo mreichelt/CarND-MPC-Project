@@ -77,7 +77,9 @@ once before sending it back.
 Also, my MPC equations expected the speed to be in meters/second, while the simulator works with miles/hour. So I had to
 convert this once, too.
 
-Finally, after fixing the issues, the vehicle ran fast around the track - including the added latency! Enjoy:
+Finally, after fixing the issues, the vehicle ran fast around the track - including the added latency! 🎉
+
+Enjoy:
 
 ![Vehicle running around track seemlessly at 0.1s latency](mpc_02_latency0.1s.mp4)
 
