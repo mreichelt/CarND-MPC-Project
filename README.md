@@ -56,12 +56,30 @@ able to run around the track at a pretty high speed, as you can see in the video
 
 ### Dealing with latency
 
-**TODO**
+Dealing with latency was straightforward. I just had to call the update equations again on the state given
+by the simulator to predict the state the vehicle would have after the expected latency. You can [see my implementation
+here](src/main.cpp#L69-L74).
+For the expected latency I chose 0.12 seconds. This was to account for the added latency of 0.1 seconds as well as at
+least 20 milliseconds for MPC computation.
 
 ### Learnings
 
-**TODO**
+- From the start I used test-driven development (TDD) to test certain functions and the basic
+functionality of the `MPC` class. See [test/tests.cpp](test/tests.cpp) for details.
+  - To achieve this I needed to add a C++ testing framework to the project first. As it turned out this was pretty
+  straightforward. I will write a blog post about this for fellow Udacity students. 😃
+- The implementation of the MPC as well as dealing with latency was straightforward.
+- What took me a long time was figuring out why my code for latency didn't work as expected. Then I figured out that
+I didn't convert the parameters given by the simulator to the expected ones of my MPC equations. My MPC equations expected
+the steering angle to be positive when steering left, while the simulator expects the angle to ne negative for the same
+direction. Because of this, I had to flip the sign twice: Once when getting the angle from the simulator and
+once before sending it back.
+Also, my MPC equations expected the speed to be in meters/second, while the simulator works with miles/hour. So I had to
+convert this once, too.
 
+Finally, after fixing the issues, the vehicle ran fast around the track - including the added latency! Enjoy:
+
+![Vehicle running around track seemlessly at 0.1s latency](mpc_02_latency0.1s.mp4)
 
 
 ---
