@@ -1,6 +1,18 @@
 # CarND-Controls-MPC
 Self-Driving Car Engineer Nanodegree Program
 
+## Implementing Model Predictive Control (MPC)
+
+By using an accurate model that describes the movements of vehicles we can implement a much better controller than a
+PID controller. We will use the following equations for the MPC controller (© Udacity):
+
+![MPC equations (© Udacity)](images/mpc_equations.png)
+
+
+
+
+
+
 ---
 
 ## Dependencies
